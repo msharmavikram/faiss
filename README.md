@@ -1,5 +1,9 @@
 # Faiss 
 
+This is forked version of FAISS. The fork was done on 22nd July 2018 to enable support for PowerPC ISA extensions. Currently vector intrinsics of PowerPC is not enabled. Hence HNSW index structure is not supported. All other index structure should work. Since vectors intrinsics are not enabled, one should expect a performance degradation when running in CPU. 
+
+More details on FAISS: 
+
 Faiss is a library for efficient similarity search and clustering of dense vectors. It contains algorithms that search in sets of vectors of any size, up to ones that possibly do not fit in RAM. It also contains supporting code for evaluation and parameter tuning. Faiss is written in C++ with complete wrappers for Python/numpy. Some of the most useful algorithms are implemented on the GPU. It is developed by [Facebook AI Research](https://research.fb.com/category/facebook-ai-research-fair/).
 
 ## NEWS
