@@ -419,7 +419,8 @@ void IndexIVFPQ::precompute_table ()
 }
 
 namespace {
-
+/*
+#ifdef __x86_64__
 static uint64_t get_cycles () {
     uint32_t high, low;
     asm volatile("rdtsc \n\t"
@@ -427,6 +428,32 @@ static uint64_t get_cycles () {
                    "=d" (high));
     return ((uint64_t)high << 32) | (low);
 }
+#endif
+*/
+
+//#ifdef __powerpc__
+
+static __inline__ unsigned long long get_cycles(void) //similar to rdtsc of Intel
+{
+  unsigned long long int result=0;
+  unsigned long int upper, lower,tmp;
+  __asm__ volatile(
+                "0:                  \n"
+                "\tmftbu   %0           \n"
+                "\tmftb    %1           \n"
+                "\tmftbu   %2           \n"
+                "\tcmpw    %2,%0        \n"
+                "\tbne     0b         \n"
+                : "=r"(upper),"=r"(lower),"=r"(tmp)
+                );
+  result = upper;
+  result = result<<32;
+  result = result|lower;
+
+  return(result);
+}
+
+//#endif
 
 #define TIC t0 = get_cycles()
 #define TOC get_cycles () - t0

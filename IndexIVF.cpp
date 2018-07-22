@@ -285,7 +285,6 @@ void IndexIVF::search (idx_t n, const float *x, idx_t k,
     ScopeDeleter<long> del (idx);
     float * coarse_dis = new float [n * nprobe];
     ScopeDeleter<float> del2 (coarse_dis);
-
     quantizer->search (n, x, nprobe, coarse_dis, idx);
 
     invlists->prefetch_lists (idx, n * nprobe);

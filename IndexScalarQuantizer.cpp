@@ -15,7 +15,7 @@
 
 #include <omp.h>
 
-#include <immintrin.h>
+//#include <immintrin.h>
 
 #include "utils.h"
 

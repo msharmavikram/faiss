@@ -9,7 +9,7 @@
 import sys
 import numpy as np
 import faiss
-
+import time
 
 #################################################################
 # Small I/O functions
@@ -100,14 +100,21 @@ if stage == 5:
 if stage == 6:
     # perform a search from disk
     print("read " + tmpdir + "populated.index")
+    time1 = time.time()
     index = faiss.read_index(tmpdir + "populated.index")
     index.nprobe = 16
+    time2 = time.time()
 
     # load query vectors and ground-truth
     xq = fvecs_read("sift1M/sift_query.fvecs")
     gt = ivecs_read("sift1M/sift_groundtruth.ivecs")
-
+    time3 = time.time()
     D, I = index.search(xq, 5)
+    time4 = time.time()
+
+    loadtime = (time2-time1)*1000
+    searchtime = (time4-time3)*1000
 
     recall_at_1 = (I[:, :1] == gt[:, :1]).sum() / float(xq.shape[0])
     print("recall@1: %.3f" % recall_at_1)
+    print("Load time %.3f ms \t Search time %.3f ms" %(loadtime, searchtime))

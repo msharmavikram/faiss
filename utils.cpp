@@ -15,7 +15,7 @@
 #include <cstring>
 #include <cmath>
 
-#include <immintrin.h>
+//#include <immintrin.h>
 
 
 #include <sys/time.h>
@@ -457,9 +457,55 @@ float fvec_norm_L2sqr_ref (const float * __restrict x,
 }
 
 
+float fvec_L2sqr(const float * x,
+                     const float * y,
+                     size_t d)
+{
+    size_t i;
+    float res = 0;
+    for (i = 0; i < d; i++) {
+        const float tmp = x[i] - y[i];
+       res += tmp * tmp;
+    }
+    return res;
+}
+
+float fvec_inner_product(const float * x,
+                             const float * y,
+                             size_t d)
+{
+    size_t i;
+    float res = 0;
+    for (i = 0; i < d; i++)
+       res += x[i] * y[i];
+    return res;
+}
+
+float fvec_norm_L2sqr(const float * __restrict x,
+                          size_t d)
+{
+    size_t i;
+    double res = 0;
+    for (i = 0; i < d; i++)
+       res += x[i] * x[i];
+    return res;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*********************************************************
  * SSE and AVX implementations
- */
 
 // reads 0 <= d < 4 floats as __m128
 static inline __m128 masked_read (int d, const float *x)
@@ -479,7 +525,6 @@ static inline __m128 masked_read (int d, const float *x)
 }
 
 #ifdef USE_AVX
-
 // reads 0 <= d < 8 floats as __m256
 static inline __m256 masked_read_8 (int d, const float *x)
 {
@@ -495,6 +540,7 @@ static inline __m256 masked_read_8 (int d, const float *x)
         return res;
     }
 }
+
 
 float fvec_inner_product (const float * x,
                           const float * y,
@@ -568,8 +614,10 @@ float fvec_L2sqr (const float * x,
 }
 
 #else
+*/
 
 /* SSE-implementation of L2 distance */
+/*
 float fvec_L2sqr (const float * x,
                  const float * y,
                  size_t d)
@@ -648,7 +696,7 @@ float fvec_norm_L2sqr (const float *  x,
     return  _mm_cvtss_f32 (msum1);
 }
 
-
+*/
 
 
 /***************************************************************************
@@ -1869,6 +1917,17 @@ static inline void fvec_madd_ref (size_t n, const float *a,
 }
 
 
+//hack
+static inline void fvec_madd_sse(size_t n, const float *a,
+                           float bf, const float *b, float *c) {
+    for (size_t i = 0; i < n; i++)
+        c[i] = a[i] + bf * b[i];
+}
+
+
+
+/*
+
 static inline void fvec_madd_sse (size_t n, const float *a,
                                   float bf, const float *b, float *c) {
     n >>= 2;
@@ -1884,6 +1943,9 @@ static inline void fvec_madd_sse (size_t n, const float *a,
         c4++;
     }
 }
+*/
+
+
 
 void fvec_madd (size_t n, const float *a,
                        float bf, const float *b, float *c)
@@ -1909,6 +1971,29 @@ static inline int fvec_madd_and_argmin_ref (size_t n, const float *a,
     }
     return imin;
 }
+
+
+//hack
+static inline int fvec_madd_and_argmin_sse(size_t n, const float *a,
+                                         float bf, const float *b, float *c) {
+    float vmin = 1e20;
+    int imin = -1;
+
+    for (size_t i = 0; i < n; i++) {
+        c[i] = a[i] + bf * b[i];
+        if (c[i] < vmin) {
+            vmin = c[i];
+            imin = i;
+        }
+    }
+    return imin;
+}
+
+
+
+
+
+/*
 
 static inline int fvec_madd_and_argmin_sse (size_t n, const float *a,
                                          float bf, const float *b, float *c) {
@@ -1957,6 +2042,10 @@ static inline int fvec_madd_and_argmin_sse (size_t n, const float *a,
     }
     return  _mm_extract_epi32 (imin4, 0);
 }
+
+
+*/
+
 
 
 int fvec_madd_and_argmin (size_t n, const float *a,

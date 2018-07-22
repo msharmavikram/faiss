@@ -26,7 +26,10 @@
 #include <unistd.h>
 #include <stdint.h>
 
-#include <immintrin.h>
+//#include <immintrin.h>
+
+//#include <altivec.h>
+
 
 #include "utils.h"
 #include "Heap.h"
@@ -1850,7 +1853,7 @@ struct Distance2Level: HNSW::DistanceComputer {
 
 };
 
-
+/*
 // well optimized for xNN+PQNN
 struct DistanceXPQ4: Distance2Level {
 
@@ -1949,7 +1952,7 @@ struct Distance2xXPQ4: Distance2Level {
 
 };
 
-
+*/
 
 HNSW::DistanceComputer * IndexHNSW2Level::get_distance_computer () const
 {
@@ -1962,14 +1965,18 @@ HNSW::DistanceComputer * IndexHNSW2Level::get_distance_computer () const
             dynamic_cast<MultiIndexQuantizer*> (storage2l->q1.quantizer);
 
         if (mi && storage2l->pq.M % 2 == 0 && storage2l->pq.dsub == 4) {
-            return new Distance2xXPQ4(*storage2l);
+            //return new Distance2xXPQ4(*storage2l);
+            //return new Distance2Level(*storage2l);
+            printf("HNSW is not implmemented for PowerPC\n");
         }
 
         const IndexFlat *fl =
             dynamic_cast<IndexFlat*> (storage2l->q1.quantizer);
 
         if (fl && storage2l->pq.dsub == 4) {
-            return new DistanceXPQ4(*storage2l);
+            //return new DistanceXPQ4(*storage2l);
+            //return new Distance2Level(*storage2l);
+            printf("HNSW is not implmemented for PowerPC\n");
         }
     }
 
