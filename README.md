@@ -1,6 +1,6 @@
 # Faiss 
 
-This is forked version of FAISS. The fork was done on 22nd July 2018 to enable support for PowerPC ISA extensions. Currently vector intrinsics of PowerPC is not enabled. Hence HNSW index structure is not supported. All other index structure should work. Since vectors intrinsics are not enabled, one should expect a performance degradation when running in CPU. 
+This is forked version of FAISS. The fork was done on 24th July 2018 to enable support for PowerPC ISA extensions. Currently vector intrinsics of PowerPC is not enabled. Hence HNSW index structure is not supported. All other index structure should work. Since vectors intrinsics are not enabled, one should expect a performance degradation when running in CPU. 
 
 More details on FAISS: 
 
