@@ -15,8 +15,11 @@
 #include <cstring>
 #include <cmath>
 
-//#include <immintrin.h>
-
+#ifdef __x86_64__
+#include <immintrin.h>
+#elif JUNK 
+#include <altivec.h>
+#endif 
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -493,19 +496,11 @@ float fvec_norm_L2sqr(const float * __restrict x,
 
 
 
-
-
-
-
-
-
-
-
-
-
+#ifdef __x86_64__
 
 /*********************************************************
- * SSE and AVX implementations
+* SSE and AVX implementations
+*********************************************************/
 
 // reads 0 <= d < 4 floats as __m128
 static inline __m128 masked_read (int d, const float *x)
@@ -614,10 +609,10 @@ float fvec_L2sqr (const float * x,
 }
 
 #else
-*/
 
-/* SSE-implementation of L2 distance */
-/*
+
+/* SSE-implementation of L2 distance*/ 
+
 float fvec_L2sqr (const float * x,
                  const float * y,
                  size_t d)
@@ -672,9 +667,8 @@ float fvec_inner_product (const float * x,
     return  _mm_cvtss_f32 (msum1);
 }
 
+#endif //avx vs sse
 
-
-#endif
 
 float fvec_norm_L2sqr (const float *  x,
                       size_t d)
@@ -696,7 +690,133 @@ float fvec_norm_L2sqr (const float *  x,
     return  _mm_cvtss_f32 (msum1);
 }
 
-*/
+
+//#elif __power__
+#elif JUNK
+
+/*********************************************************
+*  PowerPC vector implementation of the various functions. 
+*  Currently support for 128bit vectors. 
+*********************************************************/
+
+// reads 0 <= d < 4 floats as vector float
+static inline vector float masked_read (int d, const float *x)
+{
+    assert (0 <= d && d < 4);
+    __attribute__((__aligned__(16))) float buf[4] = {0, 0, 0, 0};
+    switch (d) {
+      case 3:
+        buf[2] = x[2];
+      case 2:
+        buf[1] = x[1];
+      case 1:
+        buf[0] = x[0];
+    }
+    //return _mm_load_ps (buf);
+    return vec_ld(0,buf);
+
+}
+
+
+float fvec_L2sqr (const float * x,
+                 const float * y,
+                 size_t d)
+{
+    //vector float msum1 = _mm_setzero_ps();
+    vector float msum1;
+    msum1 = vec_xor(msum1, msum1); //does zeroing of the vector. 
+
+    while (d >= 4) {
+        //vector float mx = _mm_loadu_ps (x); x += 4;
+        //vector float my = _mm_loadu_ps (y); y += 4;
+        vector float mx = vec_ld(0, x ); x += 4;
+        vector float my = vec_ld(0, y ); y += 4;
+        const vector float a_m_b1 = mx - my;
+        //msum1 += a_m_b1 * a_m_b1;
+        msum1 = vec_madd(a_m_b1,a_m_b1,msum1);
+        d -= 4;
+    }
+
+    if (d > 0) {
+        // add the last 1, 2 or 3 values
+        vector float mx = masked_read (d, x);
+        vector float my = masked_read (d, y);
+        vector float a_m_b1 = mx - my;
+        //msum1 += a_m_b1 * a_m_b1;
+        msum1 = vec_madd(a_m_b1,a_m_b1,msum1);
+    }
+//FIXME: NO ALTERNATIVES!
+    msum1 = _mm_hadd_ps (msum1, msum1);
+    msum1 = _mm_hadd_ps (msum1, msum1);
+    return  _mm_cvtss_f32 (msum1);
+}
+
+
+float fvec_inner_product (const float * x,
+                         const float * y,
+                         size_t d)
+{
+    vector float mx, my;
+    //vector float msum1 = _mm_setzero_ps();
+    vector float msum1;
+    msum1 = vec_xor(msum1, msum1); //does zeroing of the vector. 
+
+    while (d >= 4) {
+        //mx = _mm_loadu_ps (x); x += 4;
+        //my = _mm_loadu_ps (y); y += 4;
+        mx = vec_ld(0, x); x += 4;
+        my = vec_ld(0, y); y += 4;
+        //msum1 = _mm_add_ps (msum1, _mm_mul_ps (mx, my));
+        msum1 = vec_add (msum1, vec_mul(mx, my));
+        d -= 4;
+    }
+
+    // add the last 1, 2, or 3 values
+    mx = masked_read (d, x);
+    my = masked_read (d, y);
+    //vector float prod = _mm_mul_ps (mx, my);
+    vector float prod = vec_mul (mx, my);
+    //msum1 = _mm_add_ps (msum1, prod);
+    msum1 = vec_add (msum1, prod);
+
+//FIXME: NO ALTERNATIVES!
+    msum1 = _mm_hadd_ps (msum1, msum1);
+    msum1 = _mm_hadd_ps (msum1, msum1);
+    return  _mm_cvtss_f32 (msum1);
+}
+
+
+float fvec_norm_L2sqr (const float *  x,
+                      size_t d)
+{
+    vector float mx;
+    //vector float msum1 = _mm_setzero_ps();
+    vector float msum1;
+    msum1 = vec_xor(msum1, msum1); //does zeroing of the vector. 
+
+    while (d >= 4) {
+        //mx = _mm_loadu_ps (x); x += 4;
+        mx = vec_ld(0,x); x += 4;
+        //msum1 = _mm_add_ps (msum1, _mm_mul_ps (mx, mx));
+        msum1 = vec_add (msum1, vec_mul (mx, mx));
+        d -= 4;
+    }
+
+    mx = masked_read (d, x);
+    //msum1 = _mm_add_ps (msum1, _mm_mul_ps (mx, mx));
+    msum1 = vec_add (msum1, vec_mul (mx, mx));
+
+//FIXME: NO ALTERNATIVES!
+    msum1 = _mm_hadd_ps (msum1, msum1);
+    msum1 = _mm_hadd_ps (msum1, msum1);
+    return  _mm_cvtss_f32 (msum1);
+}
+
+
+#endif //arch power vs x86
+
+
+
 
 
 /***************************************************************************
@@ -777,18 +897,6 @@ void fvec_renorm_L2 (size_t d, size_t nx, float * __restrict x)
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
