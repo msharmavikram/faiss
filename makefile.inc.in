@@ -11,6 +11,16 @@ CXXCPP       = @CXXCPP@
 CPPFLAGS     = -DFINTEGER=int @CPPFLAGS@
 CXXFLAGS     = -fPIC @OPENMP_CXXFLAGS@ -m64 -Wno-sign-compare @CXXFLAGS@
 CPUFLAGS     = -msse4 -mpopcnt
+TARGET_ARCH  = x86_64
+
+uname_p := $(shell uname -p)
+ifeq ($(uname_p),ppc64le)
+    CPUFLAGS     = -mvsx 
+    TARGET_ARCH  = ppc64le
+    $(info TARGET_ARCH=$(shell uname -p))
+    $(info TARGET_ARCH_CUDA=$(TARGET_ARCH)-linux)
+endif
+
 LDFLAGS      = @OPENMP_LDFLAGS@ @LDFLAGS@
 LIBS         = @BLAS_LIBS@ @LAPACK_LIBS@ @LIBS@
 PYTHONCFLAGS = @PYTHON_CFLAGS@ -I@NUMPY_INCLUDE@
@@ -20,7 +30,7 @@ NVCCLDFLAGS  = @NVCC_LDFLAGS@
 NVCCLIBS     = @NVCC_LIBS@
 CUDAROOT     = @CUDA_PREFIX@
 CUDACFLAGS   = @NVCC_CPPFLAGS@
-NVCCFLAGS    = -I $(CUDAROOT)/targets/x86_64-linux/include/ \
+NVCCFLAGS    = -I $(CUDAROOT)/targets/$(TARGET_ARCH)-linux/include/ \
 -Xcompiler -fPIC \
 -Xcudafe --diag_suppress=unrecognized_attribute \
 -gencode arch=compute_35,code="compute_35" \
